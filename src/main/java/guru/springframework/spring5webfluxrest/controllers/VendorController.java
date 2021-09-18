@@ -4,9 +4,9 @@ import guru.springframework.spring5webfluxrest.domain.Category;
 import guru.springframework.spring5webfluxrest.domain.Vendor;
 import guru.springframework.spring5webfluxrest.repositories.CategoryRepository;
 import guru.springframework.spring5webfluxrest.repositories.VendorRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.reactivestreams.Publisher;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,4 +27,31 @@ public class VendorController {
     Mono<Vendor> getById(@PathVariable String id){
         return vendorRepository.findById(id);
     }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/api/v1/vendors")
+    Mono<Void> create(@RequestBody Publisher<Vendor> vendorStream){
+        return vendorRepository.saveAll(vendorStream).then();
+    }
+
+    @PutMapping("/api/v1/vendors/{id}")
+    Mono<Vendor> update(String id, @RequestBody Vendor vendor){
+        vendor.setId(id);
+        return vendorRepository.save(vendor);
+    }
+
+    @PatchMapping("/api/v1/vendors/{id}")
+    Mono<Vendor> patch(@PathVariable String id, @RequestBody Vendor vendor){
+
+        Vendor foundVendor = vendorRepository.findById(id).block();
+
+        if(foundVendor.getFirstName()!= vendor.getFirstName()){
+            foundVendor.setFirstName(vendor.getFirstName());
+            vendorRepository.save(foundVendor);
+        }
+        return Mono.just(foundVendor);
+    }
+
+
+
 }
